@@ -8,7 +8,7 @@ The particle system is controlled by a configuration file in the format that is 
 Installation
 ------------
 
-In the `src`-directory, you will find 2 classes -- the SXParticleSystem and a helper class. Add those classes directly to your Sparrow-powered game.
+In the `src`-directory, you will find 2 classes - the SXParticleSystem and a helper class. Add those classes directly to your Sparrow-powered game.
 
 Demo-Project
 ------------
@@ -39,8 +39,8 @@ container. As usual, you have to add it to a juggler (or call its `advanceTime:`
     ps.y = 240.0f;
   
     // add it to the stage and the juggler
-    [self addChild:mParticleSystem];
-    [self.juggler addObject:mParticleSystem];
+    [self addChild:ps];
+    [self.juggler addObject:ps];
     [ps release];
     
     // stop emitting particles
