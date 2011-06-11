@@ -19,6 +19,8 @@
         // add it to the stage and the juggler
         [self addChild:mParticleSystem];
         [self.juggler addObject:mParticleSystem];
+
+        [mParticleSystem start];
         [mParticleSystem release];
 
         // register touch event for emitter manipulation

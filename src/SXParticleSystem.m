@@ -42,7 +42,8 @@
 
 @interface SXParticleSystem()
 
-- (void)addParticle;
+- (void)addParticleWithElapsedTime:(double)time;
+- (void)advanceParticle:(SXParticle *)particle byTime:(double)passedTime;
 - (void)parseConfiguration:(NSString *)path;
 - (SXColor4f)colorFromDictionary:(NSDictionary *)dictionary;
 
@@ -55,6 +56,7 @@
 @synthesize numParticles = mNumParticles;
 @synthesize emitterX = mEmitterX;
 @synthesize emitterY = mEmitterY;
+@synthesize scaleFactor = mScaleFactor;
 
 - (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture
 {
@@ -65,7 +67,7 @@
         [self parseConfiguration:filename];
         mParticles = malloc(sizeof(SXParticle) * mMaxNumParticles);
         mPointSprites = malloc(sizeof(SXPointSprite) * mMaxNumParticles);
-        [self start];
+        mScaleFactor = [SPStage contentScaleFactor];
     }
     return self;
 }
@@ -94,12 +96,114 @@
     [super dealloc];
 }
 
-- (void)addParticle
+- (void)advanceTime:(double)passedTime
+{
+    // advance existing particles
+    
+    int particleIndex = 0;    
+    while (particleIndex < mNumParticles)
+    {
+		// get the particle for the current particle index
+		SXParticle *currentParticle = &mParticles[particleIndex];
+		
+		// if the current particle is alive then update it
+		if (currentParticle->timeToLive > passedTime) 
+        {
+            [self advanceParticle:currentParticle byTime:passedTime];
+			particleIndex++;
+		} 
+        else 
+        {            
+			if (particleIndex != mNumParticles - 1)
+				mParticles[particleIndex] = mParticles[mNumParticles - 1];
+            
+			mNumParticles--;
+		}
+	}
+    
+    // create and advance new particles
+    
+    if (mBurstTime > 0)
+    {
+        float timeBetweenParticles = mLifespan / mMaxNumParticles;   
+        mFrameTime += passedTime;
+        while (mFrameTime > 0)
+        {
+            [self addParticleWithElapsedTime:mFrameTime];
+            mFrameTime -= timeBetweenParticles;
+        }
+        
+        if (mBurstTime != DBL_MAX)
+            mBurstTime = MAX(0.0, mBurstTime - passedTime);
+    }
+    
+    // update point sprites data (except color, which is updated in 'render:')
+    
+    for (int i=0; i<mNumParticles; ++i)
+    {    
+        SXParticle *particle = &mParticles[i];
+        SXPointSprite *pointSprite = &mPointSprites[i];
+        pointSprite->x = particle->x;
+        pointSprite->y = particle->y;
+        pointSprite->size = MAX(0, particle->size);
+    }
+}
+
+- (void)advanceParticle:(SXParticle *)particle byTime:(double)passedTime
+{
+    passedTime = MIN(passedTime, particle->timeToLive);
+    particle->timeToLive -= passedTime;
+    
+    if (mEmitterType == SXParticleEmitterTypeRadial) 
+    {
+        particle->rotation += particle->rotationDelta * passedTime;
+        particle->radius   -= particle->radiusDelta   * passedTime;
+        particle->x = mEmitterX - cosf(particle->rotation) * particle->radius;
+        particle->y = mEmitterX - sinf(particle->rotation) * particle->radius;
+        
+        if (particle->radius < mMinRadius)
+            particle->timeToLive = 0;                
+    } 
+    else 
+    {
+        float distanceX = particle->x - particle->startX;
+        float distanceY = particle->y - particle->startY;                
+        float distanceScalar = MAX(0.01f, sqrtf(SQ(distanceX) + SQ(distanceY)));
+        
+        float radialX = distanceX / distanceScalar;
+        float radialY = distanceY / distanceScalar;
+        float tangentialX = radialX;
+        float tangentialY = radialY;
+        
+        radialX *= particle->radialAcceleration;
+        radialY *= particle->radialAcceleration;
+        
+        float newY = tangentialX;
+        tangentialX = -tangentialY * particle->tangentialAcceleration;
+        tangentialY = newY * particle->tangentialAcceleration;
+        
+        particle->velocityX += passedTime * (mGravityX + radialX + tangentialX);
+        particle->velocityY += passedTime * (mGravityY + radialY + tangentialY);
+        particle->x += particle->velocityX * passedTime;
+        particle->y += particle->velocityY * passedTime;
+    }
+    
+    particle->size += particle->sizeDelta * passedTime;
+    
+    // Update the particle's color
+    particle->color.red   += particle->colorDelta.red   * passedTime;
+    particle->color.green += particle->colorDelta.green * passedTime;
+    particle->color.blue  += particle->colorDelta.blue  * passedTime;
+    particle->color.alpha += particle->colorDelta.alpha * passedTime;
+}
+
+- (void)addParticleWithElapsedTime:(double)time
 {	
     if (mNumParticles >= mMaxNumParticles)
         return;
     
-    SXParticle *particle = &mParticles[mNumParticles++];
+    int particleID = mNumParticles++;
+    SXParticle *particle = &mParticles[particleID];
     
     particle->x = RANDOM_VARIANCE(mEmitterX, mEmitterXVariance);
     particle->y = RANDOM_VARIANCE(mEmitterY, mEmitterYVariance);
@@ -121,11 +225,12 @@
     particle->radialAcceleration = mRadialAcceleration;
     particle->tangentialAcceleration = mTangentialAcceleration;
     
-	float particleStartSize  = RANDOM_VARIANCE(mStartSize, mStartSizeVariance);
-    float particleFinishSize = RANDOM_VARIANCE(mEndSize, mEndSizeVariance); 
-    particle->size = MAX(0, particleStartSize);
+    float scale = (self.scaleX + self.scaleY) / 2.0f * mScaleFactor;    
+	float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance)) * scale;
+    float particleFinishSize = MAX(0.1f, RANDOM_VARIANCE(mEndSize, mEndSizeVariance)) * scale; 
+    particle->size = particleStartSize;
     particle->sizeDelta = (particleFinishSize - particleStartSize) / lifespan;
-
+    
     SXColor4f startColor = RANDOM_COLOR_VARIANCE(mStartColor, mStartColorVariance);
     SXColor4f endColor   = RANDOM_COLOR_VARIANCE(mEndColor,   mEndColorVariance);
 
@@ -137,28 +242,8 @@
     
     particle->color = startColor;
     particle->colorDelta = colorDelta;
-}
-
-- (void)start
-{
-    mActive = YES;
-}
-
-- (void)stop
-{
-    mActive = NO;
-}
-
-- (SPRectangle*)boundsInSpace:(SPDisplayObject*)targetCoordinateSpace
-{
-    // we return an empty rectangle (width and height are zero), but with the correct
-    // values for x and y.
     
-    SPMatrix *transformationMatrix = [self transformationMatrixToSpace:targetCoordinateSpace];
-    SPPoint *point = [SPPoint pointWithX:self.x y:self.y];
-    SPPoint *transformedPoint = [transformationMatrix transformPoint:point];
-    return [SPRectangle rectangleWithX:transformedPoint.x y:transformedPoint.y 
-                                 width:0.0f height:0.0f];
+    [self advanceParticle:particle byTime:time];
 }
 
 - (void)render:(SPRenderSupport *)support
@@ -177,10 +262,10 @@
                                  (GLubyte)(pColor4f.blue  * 255) << 16 |
                                  (GLubyte)(pColor4f.alpha * alpha * 255) << 24;
     }
-
+    
     if (!mVertexBuffer)
         glGenBuffers(1, &mVertexBuffer);
-
+    
     // update vertex buffer
     glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SXPointSprite) * mMaxNumParticles, mPointSprites, GL_DYNAMIC_DRAW);
@@ -212,93 +297,31 @@
     [support reset];
 }
 
-#pragma mark SPAnimatable
-
-- (void)advanceTime:(double)passedTime
+- (void)start
 {
-    float emissionRate = mMaxNumParticles / mLifespan;    
-	
-	if (mActive && emissionRate) 
-    {
-		float rate = 1.0f / emissionRate;
-		mEmitCounter += passedTime;
-		
-        while (mNumParticles < mMaxNumParticles && mEmitCounter > rate) 
-        {
-			[self addParticle];
-			mEmitCounter -= rate;
-		}
-	}	
-	
-    int particleIndex = 0;
+    [self startBurst:DBL_MAX];
+}
+
+- (void)startBurst:(double)duration
+{
+    mBurstTime = fabs(duration);
+}
+
+- (void)stop
+{
+    mBurstTime = 0;
+}
+
+- (SPRectangle*)boundsInSpace:(SPDisplayObject*)targetCoordinateSpace
+{
+    // we return an empty rectangle (width and height are zero), but with the correct
+    // values for x and y.
     
-    while (particleIndex < mNumParticles)
-    {
-		// Get the particle for the current particle index
-		SXParticle *currentParticle = &mParticles[particleIndex];
-        currentParticle->timeToLive -= passedTime;
-		
-		// If the current particle is alive then update it
-		if (currentParticle->timeToLive > 0) 
-        {
-            if (mEmitterType == SXParticleEmitterTypeRadial) 
-            {
-				currentParticle->rotation += currentParticle->rotationDelta * passedTime;
-				currentParticle->radius   -= currentParticle->radiusDelta   * passedTime;
-                currentParticle->x = mEmitterX - cosf(currentParticle->rotation) * currentParticle->radius;
-                currentParticle->y = mEmitterX - sinf(currentParticle->rotation) * currentParticle->radius;
-                
-				if (currentParticle->radius < mMinRadius)
-					currentParticle->timeToLive = 0;                
-			} 
-            else 
-            {
-                float distanceX = currentParticle->x - currentParticle->startX;
-                float distanceY = currentParticle->y - currentParticle->startY;                
-                float distanceScalar = MAX(0.01f, sqrtf(SQ(distanceX) + SQ(distanceY)));
-                
-                float radialX = distanceX / distanceScalar;
-                float radialY = distanceY / distanceScalar;
-                float tangentialX = radialX;
-                float tangentialY = radialY;
-                
-                radialX *= currentParticle->radialAcceleration;
-                radialY *= currentParticle->radialAcceleration;
-                
-                float newY = tangentialX;
-                tangentialX = -tangentialY * currentParticle->tangentialAcceleration;
-                tangentialY = newY * currentParticle->tangentialAcceleration;
-                
-                currentParticle->velocityX += passedTime * (mGravityX + radialX + tangentialX);
-                currentParticle->velocityY += passedTime * (mGravityY + radialY + tangentialY);
-                currentParticle->x += currentParticle->velocityX * passedTime;
-                currentParticle->y += currentParticle->velocityY * passedTime;
-			}
-             
-			currentParticle->size += currentParticle->sizeDelta * passedTime;
-            
-            // Update the particle's color
-            currentParticle->color.red   += currentParticle->colorDelta.red   * passedTime;
-            currentParticle->color.green += currentParticle->colorDelta.green * passedTime;
-            currentParticle->color.blue  += currentParticle->colorDelta.blue  * passedTime;
-            currentParticle->color.alpha += currentParticle->colorDelta.alpha * passedTime;
-             
-			// update point sprites buffer; color is updated in 'render:'.
-			mPointSprites[particleIndex].x = currentParticle->x;
-			mPointSprites[particleIndex].y = currentParticle->y;
-			mPointSprites[particleIndex].size = MAX(0, currentParticle->size);
-            
-			// Update the particle counter
-			particleIndex++;
-		} 
-        else 
-        {            
-			if (particleIndex != mNumParticles - 1)
-				mParticles[particleIndex] = mParticles[mNumParticles - 1];
-            
-			mNumParticles--;
-		}
-	}    
+    SPMatrix *transformationMatrix = [self transformationMatrixToSpace:targetCoordinateSpace];
+    SPPoint *point = [SPPoint pointWithX:self.x y:self.y];
+    SPPoint *transformedPoint = [transformationMatrix transformPoint:point];
+    return [SPRectangle rectangleWithX:transformedPoint.x y:transformedPoint.y 
+                                 width:0.0f height:0.0f];
 }
 
 - (BOOL)isComplete
@@ -377,13 +400,13 @@
     else if ([elementName isEqualToString:@"particlelifespanvariance"])
         mLifespanVariance = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"startparticlesize"])
-        mStartSize = [[attributeDict objectForKey:@"value"] floatValue] * [SPStage contentScaleFactor];
+        mStartSize = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"startparticlesizevariance"])
-        mStartSizeVariance = [[attributeDict objectForKey:@"value"] floatValue] * [SPStage contentScaleFactor];
+        mStartSizeVariance = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"finishparticlesize"])
-        mEndSize = [[attributeDict objectForKey:@"value"] floatValue] * [SPStage contentScaleFactor];
+        mEndSize = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"finishparticlesizevariance"])
-        mEndSizeVariance = [[attributeDict objectForKey:@"value"] floatValue] * [SPStage contentScaleFactor];
+        mEndSizeVariance = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"angle"])
         mEmitAngle = SP_D2R([[attributeDict objectForKey:@"value"] floatValue]);
     else if ([elementName isEqualToString:@"anglevariance"])

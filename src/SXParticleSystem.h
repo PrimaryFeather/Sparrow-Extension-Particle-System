@@ -46,6 +46,7 @@ typedef struct
     float rotation, rotationDelta;
     float size, sizeDelta;    
     float timeToLive;
+    float timeOffset;
 } SXParticle;
 
 /** ------------------------------------------------------------------------------------------------
@@ -65,10 +66,11 @@ typedef struct
  	
     SPTexture *mTexture;
     NSString *mPath;            
-    BOOL mActive;    
+    double mBurstTime;
+    double mFrameTime;
+    int mNumParticles;
+    float mScaleFactor;
     
-    float mEmitCounter;
-    int mNumParticles;    
     uint mVertexBuffer;
 	SXParticle *mParticles;
 	SXPointSprite *mPointSprites;
@@ -110,10 +112,10 @@ typedef struct
     float mRotatePerSecondVariance;                 // rotatePerSecondVariance
     
     // color configuration
-    SXColor4f mStartColor;                               // startColor
-    SXColor4f mStartColorVariance;                       // startColorVariance
-    SXColor4f mEndColor;                                 // finishColor
-    SXColor4f mEndColorVariance;                         // finishColorVariance
+    SXColor4f mStartColor;                          // startColor
+    SXColor4f mStartColorVariance;                  // startColorVariance
+    SXColor4f mEndColor;                            // finishColor
+    SXColor4f mEndColorVariance;                    // finishColorVariance
 
     // blend function
     int mBlendFuncSource;                           // blendFuncSource
@@ -133,6 +135,9 @@ typedef struct
 /// Starts emitting particles.
 - (void)start;
 
+/// Emits particles for a certain time
+- (void)startBurst:(double)duration;
+
 /// Stops emitting particles.
 - (void)stop;
 
@@ -144,5 +149,8 @@ typedef struct
 
 /// The position (y) where particles are emitted in the local coordinate system.
 @property (nonatomic, assign) float emitterY;
+
+/// The scale factor of the particles. Default: normal displays: 1, retina displays: 2.
+@property (nonatomic, assign) float scaleFactor;
 
 @end
