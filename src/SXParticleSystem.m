@@ -202,16 +202,17 @@
     if (mNumParticles >= mMaxNumParticles)
         return;
     
-    int particleID = mNumParticles++;
-    SXParticle *particle = &mParticles[particleID];
+    float lifespan = RANDOM_VARIANCE(mLifespan, mLifespanVariance);
+    if (lifespan <= 0.0f) 
+        return;
+    
+    SXParticle *particle = &mParticles[mNumParticles++];
+    particle->timeToLive = lifespan;
     
     particle->x = RANDOM_VARIANCE(mEmitterX, mEmitterXVariance);
     particle->y = RANDOM_VARIANCE(mEmitterY, mEmitterYVariance);
     particle->startX = mEmitterX;
     particle->startY = mEmitterY;
-    
-    float lifespan = MAX(0.01, RANDOM_VARIANCE(mLifespan, mLifespanVariance));
-    particle->timeToLive = lifespan;
     
     float angle = RANDOM_VARIANCE(mEmitAngle, mEmitAngleVariance);
     float speed = RANDOM_VARIANCE(mSpeed, mSpeedVariance);
