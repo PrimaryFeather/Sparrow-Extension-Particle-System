@@ -46,7 +46,6 @@ typedef struct
     float rotation, rotationDelta;
     float size, sizeDelta;    
     float timeToLive;
-    float timeOffset;
 } SXParticle;
 
 /** ------------------------------------------------------------------------------------------------
