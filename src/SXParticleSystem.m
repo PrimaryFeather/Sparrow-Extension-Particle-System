@@ -24,7 +24,7 @@
 #define SQ(x) ((x)*(x))
 
 // returns an RGBA color encoded in an UINT
-#define SX_RGBA(r, g, b, a)	(((int)(a) << 24) | ((int)(r) << 16) | ((int)(g) << 8) | (int)(b))
+#define SX_RGBA(r, g, b, a)    (((int)(a) << 24) | ((int)(r) << 16) | ((int)(g) << 8) | (int)(b))
 
 // returns a random number between 0 and 1
 #define RANDOM_FLOAT()    ((float) arc4random() / UINT_MAX)
@@ -103,23 +103,23 @@
     int particleIndex = 0;    
     while (particleIndex < mNumParticles)
     {
-		// get the particle for the current particle index
-		SXParticle *currentParticle = &mParticles[particleIndex];
-		
-		// if the current particle is alive then update it
-		if (currentParticle->timeToLive > passedTime) 
+        // get the particle for the current particle index
+        SXParticle *currentParticle = &mParticles[particleIndex];
+        
+        // if the current particle is alive then update it
+        if (currentParticle->timeToLive > passedTime) 
         {
             [self advanceParticle:currentParticle byTime:passedTime];
-			particleIndex++;
-		} 
+            particleIndex++;
+        } 
         else 
         {            
-			if (particleIndex != mNumParticles - 1)
-				mParticles[particleIndex] = mParticles[mNumParticles - 1];
+            if (particleIndex != mNumParticles - 1)
+                mParticles[particleIndex] = mParticles[mNumParticles - 1];
             
-			mNumParticles--;
-		}
-	}
+            mNumParticles--;
+        }
+    }
     
     // create and advance new particles
     
@@ -198,7 +198,7 @@
 }
 
 - (void)addParticleWithElapsedTime:(double)time
-{	
+{    
     if (mNumParticles >= mMaxNumParticles)
         return;
     
@@ -227,7 +227,7 @@
     particle->tangentialAcceleration = mTangentialAcceleration;
     
     float scale = (self.scaleX + self.scaleY) / 2.0f * mScaleFactor;    
-	float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance)) * scale;
+    float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance)) * scale;
     float particleFinishSize = MAX(0.1f, RANDOM_VARIANCE(mEndSize, mEndSizeVariance)) * scale; 
     particle->size = particleStartSize;
     particle->sizeDelta = (particleFinishSize - particleStartSize) / lifespan;
@@ -251,7 +251,7 @@
 {
     if (mNumParticles == 0) return;
     
-	float alpha = self.alpha;
+    float alpha = self.alpha;
     [support bindTexture:mTexture];
     
     // update color data
@@ -275,22 +275,22 @@
     glEnable(GL_POINT_SPRITE_OES);    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);  
-  	glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
+      glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
     
     // point to specific data
-	glBlendFunc(mBlendFuncSource, mBlendFuncDestination);
+    glBlendFunc(mBlendFuncSource, mBlendFuncDestination);
     glVertexPointer(2, GL_FLOAT, sizeof(SXPointSprite), 0);
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(SXPointSprite), (void *)offsetof(SXPointSprite, color));
-	glPointSizePointerOES(GL_FLOAT, sizeof(SXPointSprite), (void *)offsetof(SXPointSprite, size));
-	glTexEnvi(GL_POINT_SPRITE_OES, GL_COORD_REPLACE_OES, GL_TRUE);
+    glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(SXPointSprite), (void *)offsetof(SXPointSprite, color));
+    glPointSizePointerOES(GL_FLOAT, sizeof(SXPointSprite), (void *)offsetof(SXPointSprite, size));
+    glTexEnvi(GL_POINT_SPRITE_OES, GL_COORD_REPLACE_OES, GL_TRUE);
     
     // draw particles!
-	glDrawArrays(GL_POINTS, 0, mNumParticles);
-	
+    glDrawArrays(GL_POINTS, 0, mNumParticles);
+    
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);   
-	glDisableClientState(GL_POINT_SIZE_ARRAY_OES);    
-	glDisable(GL_POINT_SPRITE_OES);
+    glDisableClientState(GL_POINT_SIZE_ARRAY_OES);    
+    glDisable(GL_POINT_SPRITE_OES);
     
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     

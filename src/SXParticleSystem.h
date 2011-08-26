@@ -16,22 +16,22 @@
 
 typedef enum 
 {
-	SXParticleEmitterTypeGravity,
-	SXParticleEmitterTypeRadial
+    SXParticleEmitterTypeGravity,
+    SXParticleEmitterTypeRadial
 } SXParticleEmitterType;
 
 typedef struct {
-	float red;
-	float green;
-	float blue;
-	float alpha;
+    float red;
+    float green;
+    float blue;
+    float alpha;
 } SXColor4f;
 
 typedef struct 
 {
-	float x, y;
-	float size;
-	uint color;
+    float x, y;
+    float size;
+    uint color;
 } SXPointSprite;
 
 typedef struct
@@ -62,7 +62,7 @@ typedef struct
 @interface SXParticleSystem : SPDisplayObject <SPAnimatable, NSXMLParserDelegate>
 {
   @private                                          // .pex element name
- 	
+     
     SPTexture *mTexture;
     NSString *mPath;            
     double mBurstTime;
@@ -71,8 +71,8 @@ typedef struct
     float mScaleFactor;
     
     uint mVertexBuffer;
-	SXParticle *mParticles;
-	SXPointSprite *mPointSprites;
+    SXParticle *mParticles;
+    SXPointSprite *mPointSprites;
     
     // emitter configuration
     SXParticleEmitterType mEmitterType;             // emitterType
