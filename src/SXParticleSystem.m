@@ -159,7 +159,7 @@
         particle->rotation += particle->rotationDelta * passedTime;
         particle->radius   -= particle->radiusDelta   * passedTime;
         particle->x = mEmitterX - cosf(particle->rotation) * particle->radius;
-        particle->y = mEmitterX - sinf(particle->rotation) * particle->radius;
+        particle->y = mEmitterY - sinf(particle->rotation) * particle->radius;
         
         if (particle->radius < mMinRadius)
             particle->timeToLive = 0;                
