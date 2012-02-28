@@ -118,6 +118,9 @@
                 mParticles[particleIndex] = mParticles[mNumParticles - 1];
             
             mNumParticles--;
+            
+            if (!mNumParticles)
+                [self dispatchEvent:[SPEvent eventWithType:@"complete"]];
         }
     }
     
