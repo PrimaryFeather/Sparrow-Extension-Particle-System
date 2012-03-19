@@ -54,9 +54,41 @@
 @implementation SXParticleSystem
 
 @synthesize numParticles = mNumParticles;
+@synthesize texture = mTexture;
+@synthesize scaleFactor = mScaleFactor;
+@synthesize startColor = mStartColor;
+@synthesize startColorVariance = mStartColorVariance;
+@synthesize endColor = mEndColor;
+@synthesize endColorVariance = mEndColorVariance;
+@synthesize emitterType = mEmitterType;
 @synthesize emitterX = mEmitterX;
 @synthesize emitterY = mEmitterY;
-@synthesize scaleFactor = mScaleFactor;
+@synthesize emitterXVariance = mEmitterXVariance;
+@synthesize emitterYVariance = mEmitterYVariance;
+@synthesize maxNumParticles = mMaxNumParticles;
+@synthesize lifespan = mLifespan;
+@synthesize lifespanVariance = mLifespanVariance;
+@synthesize startSize = mStartSize;
+@synthesize startSizeVariance = mStartSizeVariance;
+@synthesize endSize = mEndSize;
+@synthesize endSizeVariance = mEndSizeVariance;
+@synthesize emitAngle = mEmitAngle;
+@synthesize emitAngleVariance = mEmitAngleVariance;
+@synthesize speed = mSpeed;
+@synthesize speedVariance = mSpeedVariance;
+@synthesize gravityX = mGravityX;
+@synthesize gravityY = mGravityY;
+@synthesize radialAcceleration = mRadialAcceleration;
+@synthesize radialAccelerationVariance = mRadialAccelerationVariance;
+@synthesize tangentialAcceleration = mTangentialAcceleration;
+@synthesize tangentialAccelerationVariance = mTangentialAccelerationVariance;
+@synthesize maxRadius = mMaxRadius;
+@synthesize maxRadiusVariance = mMaxRadiusVariance;
+@synthesize minRadius = mMinRadius;
+@synthesize rotatePerSecond = mRotatePerSecond;
+@synthesize rotatePerSecondVariance = mRotatePerSecondVariance;
+@synthesize blendFuncSource = mBlendFuncSource;
+@synthesize blendFuncDestination = mBlendFuncDestination;
 
 - (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture
 {
@@ -459,6 +491,19 @@
     color.blue  = [[dictionary objectForKey:@"blue"]  floatValue];
     color.alpha = [[dictionary objectForKey:@"alpha"] floatValue];
     return color;
+}
+
+- (void)setLifespan:(float)value
+{
+    mLifespan = MAX(0.01, value);
+}
+
+- (void)setMaxNumParticles:(int)value
+{
+    mMaxNumParticles = value;
+    mNumParticles = MIN(mMaxNumParticles, mNumParticles);
+    mParticles = realloc(mParticles, sizeof(SXParticle) * value);
+    mPointSprites = realloc(mPointSprites, sizeof(SXPointSprite) * value);
 }
 
 @end

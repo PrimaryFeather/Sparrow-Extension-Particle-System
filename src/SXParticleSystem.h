@@ -121,6 +121,10 @@ typedef struct
     int mBlendFuncDestination;                      // blendFuncDestination
 }
 
+/// ------------------
+/// @name Initializers
+/// ------------------
+
 /// Initialize a particle system from a configuration file, using a specific texture. 
 /// _Designated Initializer_.
 - (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture;
@@ -131,6 +135,10 @@ typedef struct
 /// Factory method.
 + (id)particleSystemWithContentsOfFile:(NSString *)filename;
 
+/// ----------------------
+/// @name Playback methods
+/// ----------------------
+
 /// Starts emitting particles.
 - (void)start;
 
@@ -140,8 +148,41 @@ typedef struct
 /// Stops emitting particles.
 - (void)stop;
 
+/// ----------------------
+/// @name General Settings
+/// ----------------------
+
 /// The current number of particles.
 @property (nonatomic, readonly) int numParticles;
+
+/// The particle texture.
+@property (nonatomic, readonly) SPTexture *texture;
+
+/// The scale factor of the particles. Default: normal displays: 1, retina displays: 2.
+@property (nonatomic, assign) float scaleFactor;
+
+/// -------------------------
+/// @name Color configuration
+/// -------------------------
+
+/// The start color of new particles.
+@property (nonatomic, assign) SXColor4f startColor;
+
+/// The color variance of the start color.
+@property (nonatomic, assign) SXColor4f startColorVariance;
+
+/// The end color of particles.
+@property (nonatomic, assign) SXColor4f endColor;
+
+/// The color variance of the end color.
+@property (nonatomic, assign) SXColor4f endColorVariance;
+
+/// ---------------------------
+/// @name Emitter configuration
+/// ---------------------------
+
+/// The emitter type (supported types: Radial or Gravity).
+@property (nonatomic, assign) SXParticleEmitterType emitterType;
 
 /// The position (x) where particles are emitted in the local coordinate system.
 @property (nonatomic, assign) float emitterX;
@@ -149,7 +190,98 @@ typedef struct
 /// The position (y) where particles are emitted in the local coordinate system.
 @property (nonatomic, assign) float emitterY;
 
-/// The scale factor of the particles. Default: normal displays: 1, retina displays: 2.
-@property (nonatomic, assign) float scaleFactor;
+/// The variance of the position where particles are emitted, along the x axis.
+@property (nonatomic, assign) float emitterXVariance;
+
+/// The variance of the position where particles are emitted, along the y axis.
+@property (nonatomic, assign) float emitterYVariance;
+
+/// ----------------------------
+/// @name Particle configuration
+/// ----------------------------
+
+/// The maximum number of particles (capacity) of the system.
+@property (nonatomic, assign) int maxNumParticles; 
+
+/// The life span of a particle in seconds.
+@property (nonatomic, assign) float lifespan;
+
+/// The variance of the life span of a particle in seconds.
+@property (nonatomic, assign) float lifespanVariance;
+
+/// The start size of a particle in points.
+@property (nonatomic, assign) float startSize;
+
+/// The variance of the start size of a particle in points.
+@property (nonatomic, assign) float startSizeVariance;
+
+/// The end size of a particle in points.
+@property (nonatomic, assign) float endSize;
+
+/// The variance of the end size of a particle in points.
+@property (nonatomic, assign) float endSizeVariance; 
+
+/// The angle in which new particles are emitted in radians.
+@property (nonatomic, assign) float emitAngle;
+
+/// The variance of the engle in which new particles are emitted in radians.
+@property (nonatomic, assign) float emitAngleVariance;
+
+/// ---------------------------
+/// @name Gravity configuration
+/// ---------------------------
+
+/// The speed of a particle in points per second.
+@property (nonatomic, assign) float speed;
+
+/// The variance of the speed of a particle.
+@property (nonatomic, assign) float speedVariance;
+
+/// The gravity force along the x axis.
+@property (nonatomic, assign) float gravityX;
+
+/// The gravity force along the y axis.
+@property (nonatomic, assign) float gravityY;
+
+/// The radial acceleration of a particle.
+@property (nonatomic, assign) float radialAcceleration;
+
+/// The variance of the radial acceleration of a particle.
+@property (nonatomic, assign) float radialAccelerationVariance;
+
+/// The tangential acceleration of a particle.
+@property (nonatomic, assign) float tangentialAcceleration;
+
+/// The variance of the radial acceleration of a particle.
+@property (nonatomic, assign) float tangentialAccelerationVariance;
+
+/// --------------------------
+/// @name Radial configuration
+/// --------------------------
+
+/// The maximum radius of the radial emission.
+@property (nonatomic, assign) float maxRadius;
+
+/// The variance of the maximum radius of the radial emission.
+@property (nonatomic, assign) float maxRadiusVariance;
+
+/// The minimum radius of the radial emission.
+@property (nonatomic, assign) float minRadius;
+
+/// The rotation per second (in radians) of the radial emission.
+@property (nonatomic, assign) float rotatePerSecond;
+
+/// The variance of the rotation per second (in radians) of the radial emission.
+@property (nonatomic, assign) float rotatePerSecondVariance;
+
+/// --------------
+/// @name Blending
+/// --------------
+
+/// The source factor of the blending function.
+@property (nonatomic, assign) int blendFuncSource;
+
+/// The destination factor of the blending function.
+@property (nonatomic, assign) int blendFuncDestination;
 
 @end
