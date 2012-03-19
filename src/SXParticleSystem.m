@@ -90,16 +90,37 @@
 @synthesize blendFuncSource = mBlendFuncSource;
 @synthesize blendFuncDestination = mBlendFuncDestination;
 
-- (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture
+- (id)initWithTexture:(SPTexture *)texture
 {
-    self = [super init];
-    if (self)
+    if ((self = [super init]))
     {
         mTexture = [texture retain];
-        [self parseConfiguration:filename];
+        
+        // choose some useful defaults, just in case no config file is used
+        mMaxNumParticles = 32;
+        mEmitterType = SXParticleEmitterTypeGravity;
+        mStartColor = (SXColor4f){ 1.0f, 1.0f, 1.0f, 1.0f };
+        mEndColor   = (SXColor4f){ 0.0f, 0.0f, 0.0f, 0.0f };
+        mLifespan = 1.0f;
+        mStartSize = texture ? texture.width : 32;
+        mEmitAngleVariance = PI / 8.0f;
+        mSpeed = 256;
+        mSpeedVariance = 64;
+        mBlendFuncSource = GL_ONE;
+        mBlendFuncDestination = GL_ONE_MINUS_SRC_ALPHA;
+        mScaleFactor = [SPStage contentScaleFactor];
+        
         mParticles = malloc(sizeof(SXParticle) * mMaxNumParticles);
         mPointSprites = malloc(sizeof(SXPointSprite) * mMaxNumParticles);
-        mScaleFactor = [SPStage contentScaleFactor];
+    }
+    return self;
+}
+
+- (id)initWithContentsOfFile:(NSString *)filename texture:(SPTexture *)texture
+{
+    if ((self = [self initWithTexture:texture]))
+    {
+        [self parseConfiguration:filename];
     }
     return self;
 }
@@ -112,6 +133,48 @@
 + (id)particleSystemWithContentsOfFile:(NSString *)filename
 {
     return [[[self alloc] initWithContentsOfFile:filename] autorelease];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    SXParticleSystem *copy = [[[self class] allocWithZone:zone] initWithTexture:mTexture];
+    copy.maxNumParticles = mMaxNumParticles;
+    
+    copy->mEmitterType = mEmitterType;
+    copy->mEmitterX = mEmitterX;
+    copy->mEmitterXVariance = mEmitterXVariance;
+    copy->mEmitterY = mEmitterY;
+    copy->mEmitterYVariance = mEmitterYVariance;
+    copy->mMaxNumParticles = mMaxNumParticles;
+    copy->mLifespan = mLifespan;
+    copy->mLifespanVariance = mLifespanVariance;
+    copy->mStartSize = mStartSize;
+    copy->mStartSizeVariance = mStartSizeVariance;
+    copy->mEndSize = mEndSize;
+    copy->mEndSizeVariance = mEndSizeVariance;
+    copy->mEmitAngle = mEmitAngle;
+    copy->mEmitAngleVariance = mEmitAngleVariance;
+    copy->mSpeed = mSpeed;
+    copy->mSpeedVariance = mSpeedVariance;
+    copy->mGravityX = mGravityX;
+    copy->mGravityY = mGravityY;
+    copy->mRadialAcceleration = mRadialAcceleration;
+    copy->mRadialAccelerationVariance = mRadialAccelerationVariance;
+    copy->mTangentialAcceleration = mTangentialAcceleration;
+    copy->mTangentialAccelerationVariance = mTangentialAccelerationVariance;
+    copy->mMaxRadius = mMaxRadius;
+    copy->mMaxRadiusVariance = mMaxRadiusVariance;
+    copy->mMinRadius = mMinRadius;
+    copy->mRotatePerSecond = mRotatePerSecond;
+    copy->mRotatePerSecondVariance = mRotatePerSecondVariance;
+    copy->mStartColor = mStartColor;
+    copy->mStartColorVariance = mStartColorVariance;
+    copy->mEndColor = mEndColor;
+    copy->mEndColorVariance = mEndColorVariance;
+    copy->mBlendFuncSource = mBlendFuncSource;
+    copy->mBlendFuncDestination = mBlendFuncDestination;
+    
+    return copy;
 }
 
 - (void)dealloc
@@ -310,7 +373,7 @@
     glEnable(GL_POINT_SPRITE_OES);    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);  
-      glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
+    glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
     
     // point to specific data
     glBlendFunc(mBlendFuncSource, mBlendFuncDestination);
@@ -375,7 +438,7 @@
     mPath = [[SPUtils absolutePathToFile:path withScaleFactor:scaleFactor] retain];    
     if (!mPath) [NSException raise:SP_EXC_FILE_NOT_FOUND format:@"file not found: %@", path];
     
-    SP_CREATE_POOL(pool);
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     
     NSData *xmlData = [[NSData alloc] initWithContentsOfFile:mPath];
     NSXMLParser *xmlParser = [[NSXMLParser alloc] initWithData:xmlData];
@@ -384,7 +447,7 @@
     xmlParser.delegate = self;    
     BOOL success = [xmlParser parse];
     
-    SP_RELEASE_POOL(pool);
+    [pool release];
     
     if (!success)    
         [NSException raise:SP_EXC_FILE_INVALID 
@@ -410,7 +473,7 @@
             mTexture = [[SPTexture alloc] initWithContentsOfImage:[UIImage imageWithData:imageData]];
         }
         else
-        {        
+        {
             NSString *filename = [attributeDict valueForKey:@"name"];
             NSString *folder = [mPath stringByDeletingLastPathComponent];
             NSString *absolutePath = [folder stringByAppendingPathComponent:filename];
@@ -430,9 +493,9 @@
     else if ([elementName isEqualToString:@"emittertype"])
         mEmitterType = (SXParticleEmitterType)[[attributeDict objectForKey:@"value"] intValue];
     else if ([elementName isEqualToString:@"maxparticles"])
-        mMaxNumParticles = [[attributeDict objectForKey:@"value"] floatValue];    
+        self.maxNumParticles = [[attributeDict objectForKey:@"value"] floatValue];    
     else if ([elementName isEqualToString:@"particlelifespan"])
-        mLifespan = MAX(0.01f, [[attributeDict objectForKey:@"value"] floatValue]);
+        self.lifespan = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"particlelifespanvariance"])
         mLifespanVariance = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"startparticlesize"])

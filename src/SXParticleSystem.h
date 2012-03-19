@@ -125,12 +125,15 @@ typedef struct
 /// @name Initializers
 /// ------------------
 
-/// Initialize a particle system from a configuration file, using a specific texture. 
+/// Initialize a particle system with a specific texture. Set up reasonable properties manually.
 /// _Designated Initializer_.
-- (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture;
+- (id)initWithTexture:(SPTexture *)texture;
+
+/// Initialize a particle system from a configuration file, using a specific texture. 
+- (id)initWithContentsOfFile:(NSString *)filename texture:(SPTexture *)texture;
 
 /// Initialize a particle system from a configuration file, using the texture specified in the file.
-- (id)initWithContentsOfFile:(NSString*)filename;
+- (id)initWithContentsOfFile:(NSString *)filename;
 
 /// Factory method.
 + (id)particleSystemWithContentsOfFile:(NSString *)filename;
