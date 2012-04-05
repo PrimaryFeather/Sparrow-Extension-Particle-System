@@ -258,10 +258,10 @@
     for (int i=0; i<mNumParticles; ++i)
     {
         SXColor4f pColor4f = mParticles[i].color;
-        mPointSprites[i].color = (GLubyte)(pColor4f.red   * 255) |
-                                 (GLubyte)(pColor4f.green * 255) << 8 |
-                                 (GLubyte)(pColor4f.blue  * 255) << 16 |
-                                 (GLubyte)(pColor4f.alpha * alpha * 255) << 24;
+        mPointSprites[i].color = (GLubyte)(CLAMP(pColor4f.red,   0.0f, 1.0f) * 255) |
+                                 (GLubyte)(CLAMP(pColor4f.green, 0.0f, 1.0f) * 255) << 8 |
+                                 (GLubyte)(CLAMP(pColor4f.blue,  0.0f, 1.0f) * 255) << 16 |
+                                 (GLubyte)(CLAMP(pColor4f.alpha, 0.0f, 1.0f) * alpha * 255) << 24;
     }
     
     if (!mVertexBuffer)
@@ -275,7 +275,7 @@
     glEnable(GL_POINT_SPRITE_OES);    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);  
-      glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
+    glEnableClientState(GL_POINT_SIZE_ARRAY_OES);
     
     // point to specific data
     glBlendFunc(mBlendFuncSource, mBlendFuncDestination);
