@@ -54,20 +54,73 @@
 @implementation SXParticleSystem
 
 @synthesize numParticles = mNumParticles;
+@synthesize texture = mTexture;
+@synthesize scaleFactor = mScaleFactor;
+@synthesize startColor = mStartColor;
+@synthesize startColorVariance = mStartColorVariance;
+@synthesize endColor = mEndColor;
+@synthesize endColorVariance = mEndColorVariance;
+@synthesize emitterType = mEmitterType;
 @synthesize emitterX = mEmitterX;
 @synthesize emitterY = mEmitterY;
-@synthesize scaleFactor = mScaleFactor;
+@synthesize emitterXVariance = mEmitterXVariance;
+@synthesize emitterYVariance = mEmitterYVariance;
+@synthesize maxNumParticles = mMaxNumParticles;
+@synthesize lifespan = mLifespan;
+@synthesize lifespanVariance = mLifespanVariance;
+@synthesize startSize = mStartSize;
+@synthesize startSizeVariance = mStartSizeVariance;
+@synthesize endSize = mEndSize;
+@synthesize endSizeVariance = mEndSizeVariance;
+@synthesize emitAngle = mEmitAngle;
+@synthesize emitAngleVariance = mEmitAngleVariance;
+@synthesize speed = mSpeed;
+@synthesize speedVariance = mSpeedVariance;
+@synthesize gravityX = mGravityX;
+@synthesize gravityY = mGravityY;
+@synthesize radialAcceleration = mRadialAcceleration;
+@synthesize radialAccelerationVariance = mRadialAccelerationVariance;
+@synthesize tangentialAcceleration = mTangentialAcceleration;
+@synthesize tangentialAccelerationVariance = mTangentialAccelerationVariance;
+@synthesize maxRadius = mMaxRadius;
+@synthesize maxRadiusVariance = mMaxRadiusVariance;
+@synthesize minRadius = mMinRadius;
+@synthesize rotatePerSecond = mRotatePerSecond;
+@synthesize rotatePerSecondVariance = mRotatePerSecondVariance;
+@synthesize blendFuncSource = mBlendFuncSource;
+@synthesize blendFuncDestination = mBlendFuncDestination;
 
-- (id)initWithContentsOfFile:(NSString*)filename texture:(SPTexture *)texture
+- (id)initWithTexture:(SPTexture *)texture
 {
-    self = [super init];
-    if (self)
+    if ((self = [super init]))
     {
         mTexture = [texture retain];
-        [self parseConfiguration:filename];
+        
+        // choose some useful defaults, just in case no config file is used
+        mMaxNumParticles = 32;
+        mEmitterType = SXParticleEmitterTypeGravity;
+        mStartColor = (SXColor4f){ 1.0f, 1.0f, 1.0f, 1.0f };
+        mEndColor   = (SXColor4f){ 0.0f, 0.0f, 0.0f, 0.0f };
+        mLifespan = 1.0f;
+        mStartSize = texture ? texture.width : 32;
+        mEmitAngleVariance = PI / 8.0f;
+        mSpeed = 256;
+        mSpeedVariance = 64;
+        mBlendFuncSource = GL_ONE;
+        mBlendFuncDestination = GL_ONE_MINUS_SRC_ALPHA;
+        mScaleFactor = [SPStage contentScaleFactor];
+        
         mParticles = malloc(sizeof(SXParticle) * mMaxNumParticles);
         mPointSprites = malloc(sizeof(SXPointSprite) * mMaxNumParticles);
-        mScaleFactor = [SPStage contentScaleFactor];
+    }
+    return self;
+}
+
+- (id)initWithContentsOfFile:(NSString *)filename texture:(SPTexture *)texture
+{
+    if ((self = [self initWithTexture:texture]))
+    {
+        [self parseConfiguration:filename];
     }
     return self;
 }
@@ -80,6 +133,48 @@
 + (id)particleSystemWithContentsOfFile:(NSString *)filename
 {
     return [[[self alloc] initWithContentsOfFile:filename] autorelease];
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    SXParticleSystem *copy = [[[self class] allocWithZone:zone] initWithTexture:mTexture];
+    copy.maxNumParticles = mMaxNumParticles;
+    
+    copy->mEmitterType = mEmitterType;
+    copy->mEmitterX = mEmitterX;
+    copy->mEmitterXVariance = mEmitterXVariance;
+    copy->mEmitterY = mEmitterY;
+    copy->mEmitterYVariance = mEmitterYVariance;
+    copy->mMaxNumParticles = mMaxNumParticles;
+    copy->mLifespan = mLifespan;
+    copy->mLifespanVariance = mLifespanVariance;
+    copy->mStartSize = mStartSize;
+    copy->mStartSizeVariance = mStartSizeVariance;
+    copy->mEndSize = mEndSize;
+    copy->mEndSizeVariance = mEndSizeVariance;
+    copy->mEmitAngle = mEmitAngle;
+    copy->mEmitAngleVariance = mEmitAngleVariance;
+    copy->mSpeed = mSpeed;
+    copy->mSpeedVariance = mSpeedVariance;
+    copy->mGravityX = mGravityX;
+    copy->mGravityY = mGravityY;
+    copy->mRadialAcceleration = mRadialAcceleration;
+    copy->mRadialAccelerationVariance = mRadialAccelerationVariance;
+    copy->mTangentialAcceleration = mTangentialAcceleration;
+    copy->mTangentialAccelerationVariance = mTangentialAccelerationVariance;
+    copy->mMaxRadius = mMaxRadius;
+    copy->mMaxRadiusVariance = mMaxRadiusVariance;
+    copy->mMinRadius = mMinRadius;
+    copy->mRotatePerSecond = mRotatePerSecond;
+    copy->mRotatePerSecondVariance = mRotatePerSecondVariance;
+    copy->mStartColor = mStartColor;
+    copy->mStartColorVariance = mStartColorVariance;
+    copy->mEndColor = mEndColor;
+    copy->mEndColorVariance = mEndColorVariance;
+    copy->mBlendFuncSource = mBlendFuncSource;
+    copy->mBlendFuncDestination = mBlendFuncDestination;
+    
+    return copy;
 }
 
 - (void)dealloc
@@ -118,6 +213,9 @@
                 mParticles[particleIndex] = mParticles[mNumParticles - 1];
             
             mNumParticles--;
+            
+            if (!mNumParticles)
+                [self dispatchEvent:[SPEvent eventWithType:@"complete"]];
         }
     }
     
@@ -159,7 +257,7 @@
         particle->rotation += particle->rotationDelta * passedTime;
         particle->radius   -= particle->radiusDelta   * passedTime;
         particle->x = mEmitterX - cosf(particle->rotation) * particle->radius;
-        particle->y = mEmitterX - sinf(particle->rotation) * particle->radius;
+        particle->y = mEmitterY - sinf(particle->rotation) * particle->radius;
         
         if (particle->radius < mMinRadius)
             particle->timeToLive = 0;                
@@ -340,7 +438,7 @@
     mPath = [[SPUtils absolutePathToFile:path withScaleFactor:scaleFactor] retain];    
     if (!mPath) [NSException raise:SP_EXC_FILE_NOT_FOUND format:@"file not found: %@", path];
     
-    SP_CREATE_POOL(pool);
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     
     NSData *xmlData = [[NSData alloc] initWithContentsOfFile:mPath];
     NSXMLParser *xmlParser = [[NSXMLParser alloc] initWithData:xmlData];
@@ -349,7 +447,7 @@
     xmlParser.delegate = self;    
     BOOL success = [xmlParser parse];
     
-    SP_RELEASE_POOL(pool);
+    [pool release];
     
     if (!success)    
         [NSException raise:SP_EXC_FILE_INVALID 
@@ -375,7 +473,7 @@
             mTexture = [[SPTexture alloc] initWithContentsOfImage:[UIImage imageWithData:imageData]];
         }
         else
-        {        
+        {
             NSString *filename = [attributeDict valueForKey:@"name"];
             NSString *folder = [mPath stringByDeletingLastPathComponent];
             NSString *absolutePath = [folder stringByAppendingPathComponent:filename];
@@ -395,9 +493,9 @@
     else if ([elementName isEqualToString:@"emittertype"])
         mEmitterType = (SXParticleEmitterType)[[attributeDict objectForKey:@"value"] intValue];
     else if ([elementName isEqualToString:@"maxparticles"])
-        mMaxNumParticles = [[attributeDict objectForKey:@"value"] floatValue];    
+        self.maxNumParticles = [[attributeDict objectForKey:@"value"] floatValue];    
     else if ([elementName isEqualToString:@"particlelifespan"])
-        mLifespan = MAX(0.01f, [[attributeDict objectForKey:@"value"] floatValue]);
+        self.lifespan = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"particlelifespanvariance"])
         mLifespanVariance = [[attributeDict objectForKey:@"value"] floatValue];
     else if ([elementName isEqualToString:@"startparticlesize"])
@@ -456,6 +554,19 @@
     color.blue  = [[dictionary objectForKey:@"blue"]  floatValue];
     color.alpha = [[dictionary objectForKey:@"alpha"] floatValue];
     return color;
+}
+
+- (void)setLifespan:(float)value
+{
+    mLifespan = MAX(0.01, value);
+}
+
+- (void)setMaxNumParticles:(int)value
+{
+    mMaxNumParticles = value;
+    mNumParticles = MIN(mMaxNumParticles, mNumParticles);
+    mParticles = realloc(mParticles, sizeof(SXParticle) * value);
+    mPointSprites = realloc(mPointSprites, sizeof(SXPointSprite) * value);
 }
 
 @end

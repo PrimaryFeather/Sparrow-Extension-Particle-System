@@ -24,7 +24,6 @@
     SP_CREATE_POOL(pool);    
     
     [SPStage setSupportHighResolutions:YES];
-    [SPAudioEngine start];
     
     Game *game = [[Game alloc] init];        
     mSparrowView.stage = game;

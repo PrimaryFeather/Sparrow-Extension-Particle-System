@@ -43,12 +43,12 @@ container. As usual, you have to add it to a juggler (or call its `advanceTime:`
     [self.juggler addObject:ps];
     [ps release];
     
+    // start emitting particles
+    [ps start];
+    
     // stop emitting particles
     [ps stop];
     
-    // start emitting particles
-    [ps start];
-
 More information
 ----------------
 
