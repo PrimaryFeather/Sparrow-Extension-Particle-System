@@ -417,7 +417,7 @@
     // values for x and y.
     
     SPMatrix *transformationMatrix = [self transformationMatrixToSpace:targetCoordinateSpace];
-    SPPoint *point = [SPPoint pointWithX:self.x y:self.y];
+    SPPoint *point = [SPPoint pointWithX:0.0f y:0.0f];
     SPPoint *transformedPoint = [transformationMatrix transformPoint:point];
     return [SPRectangle rectangleWithX:transformedPoint.x y:transformedPoint.y 
                                  width:0.0f height:0.0f];
