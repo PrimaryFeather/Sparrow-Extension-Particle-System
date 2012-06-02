@@ -321,8 +321,8 @@
     particle->radiusDelta = mMaxRadius / lifespan;
     particle->rotation = RANDOM_VARIANCE(mEmitAngle, mEmitAngleVariance);
     particle->rotationDelta = RANDOM_VARIANCE(mRotatePerSecond, mRotatePerSecondVariance);    
-    particle->radialAcceleration = mRadialAcceleration;
-    particle->tangentialAcceleration = mTangentialAcceleration;
+    particle->radialAcceleration = RANDOM_VARIANCE(mRadialAcceleration, mRadialAccelerationVariance);
+    particle->tangentialAcceleration = RANDOM_VARIANCE(mTangentialAcceleration, mTangentialAccelerationVariance);
     
     float scale = (self.scaleX + self.scaleY) / 2.0f * mScaleFactor;    
     float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance)) * scale;
