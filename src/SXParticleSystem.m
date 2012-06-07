@@ -324,9 +324,8 @@
     particle->radialAcceleration = RANDOM_VARIANCE(mRadialAcceleration, mRadialAccelerationVariance);
     particle->tangentialAcceleration = RANDOM_VARIANCE(mTangentialAcceleration, mTangentialAccelerationVariance);
     
-    float scale = (self.scaleX + self.scaleY) / 2.0f * mScaleFactor;    
-    float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance)) * scale;
-    float particleFinishSize = MAX(0.1f, RANDOM_VARIANCE(mEndSize, mEndSizeVariance)) * scale; 
+    float particleStartSize  = MAX(0.1f, RANDOM_VARIANCE(mStartSize, mStartSizeVariance));
+    float particleFinishSize = MAX(0.1f, RANDOM_VARIANCE(mEndSize, mEndSizeVariance)); 
     particle->size = particleStartSize;
     particle->sizeDelta = (particleFinishSize - particleStartSize) / lifespan;
     
@@ -352,9 +351,15 @@
     float alpha = self.alpha;
     [support bindTexture:mTexture];
     
-    // update color data
+    // we need to know the scale value in respect to the stage
+    SPDisplayObject *object = self;
+    float totalScale = mScaleFactor;
+    while (object) { totalScale *= object.scaleX; object = object.parent; }
+    
+    // update color and scale data
     for (int i=0; i<mNumParticles; ++i)
     {
+        mPointSprites[i].size = mParticles[i].size * totalScale;
         SXColor4f pColor4f = mParticles[i].color;
         mPointSprites[i].color = (GLubyte)(CLAMP(pColor4f.red,   0.0f, 1.0f) * 255) |
                                  (GLubyte)(CLAMP(pColor4f.green, 0.0f, 1.0f) * 255) << 8 |
